@@ -1,10 +1,10 @@
-package com.parking.smartcity;
+package com.smartcity.parking;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SmartCityApplicationTests {
+class ParkingApplicationTests {
 
 	@Test
 	void contextLoads() {

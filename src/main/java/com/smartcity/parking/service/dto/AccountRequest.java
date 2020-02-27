@@ -1,4 +1,4 @@
-package com.smartcity.parking.service.impl;
+package com.smartcity.parking.service.dto;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
