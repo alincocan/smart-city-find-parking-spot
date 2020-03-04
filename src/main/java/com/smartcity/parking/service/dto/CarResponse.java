@@ -7,12 +7,12 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class AccountResponse {
+public class CarResponse {
 
     private UUID id;
-    private String firstName;
-    private String lastName;
-    private String email;
-    private String phoneNo;
+    private String registrationPlate;
+    private String brand;
+    private String model;
+    private String color;
 
 }
