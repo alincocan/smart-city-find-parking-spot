@@ -1,72 +1,70 @@
 package com.smartcity.parking.service.impl;
 
-import com.smartcity.parking.domain.Account;
 import com.smartcity.parking.domain.Car;
-import com.smartcity.parking.repository.AccountRepository;
+import com.smartcity.parking.remote.service.PermissionService;
 import com.smartcity.parking.repository.CarRepository;
 import com.smartcity.parking.service.CarService;
+import com.smartcity.parking.service.converter.CarRequestToCarConverter;
+import com.smartcity.parking.service.converter.CarToCarResponseConverter;
 import com.smartcity.parking.service.dto.CarRequest;
 import com.smartcity.parking.service.dto.CarResponse;
 import com.smartcity.parking.service.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.util.UUID;
+import reactor.util.function.Tuple2;
 
 @Service("carService")
 public class CarServiceImpl implements CarService {
 
     private final CarRepository carRepository;
-    private final AccountRepository accountRepository;
+    private final PermissionService permissionService;
+    private final CarToCarResponseConverter carToCarResponseConverter;
+    private final CarRequestToCarConverter carRequestToCarConverter;
 
     public CarServiceImpl(
         CarRepository carRepository,
-        AccountRepository accountRepository
+        PermissionService permissionService,
+        CarToCarResponseConverter carToCarResponseConverter,
+        CarRequestToCarConverter carRequestToCarConverter
     ) {
         this.carRepository = carRepository;
-        this.accountRepository = accountRepository;
+        this.permissionService = permissionService;
+        this.carToCarResponseConverter = carToCarResponseConverter;
+        this.carRequestToCarConverter = carRequestToCarConverter;
     }
 
-    @Override public Mono<CarResponse> create(CarRequest carRequest) {
-        Car car = Car.builder()
-            .registrationPlate(carRequest.getRegistrationPlate())
-            .brand(carRequest.getBrand())
-            .model(carRequest.getModel())
-            .color(carRequest.getColor())
-            .build();
+    @Override public Mono<CarResponse> create(CarRequest carRequest, String userId) {
+        final Car car = carRequestToCarConverter.convert(carRequest);
+        car.setAccountId(userId);
 
         return carRepository.save(car)
-            .map(this::buildResponse);
+            .flatMap(this::createPermissionAndReturnCar)
+            .map(carToCarResponseConverter::convert);
     }
 
-    @Override public Mono<CarResponse> getById(UUID id) {
-        return carRepository
-            .findById(id)
-            .map(this::buildResponse)
-            .switchIfEmpty(Mono.error(new NotFoundException("Car not found")));
+    @Override public Mono<CarResponse> getById(String id) {
+        return permissionService.getByExternalId(id)
+            .flatMap(carRepository::findById)
+            .switchIfEmpty(Mono.error(new NotFoundException("Car not found")))
+            .map(carToCarResponseConverter::convert);
     }
 
-    @Override public Flux<CarResponse> getByAccountId(UUID accountId) {
-        return accountRepository
-            .findById(accountId)
-            .switchIfEmpty(Mono.error(new NotFoundException("Account not found")))
-            .flatMapMany(account -> carRepository.findByAccountId(account.getId()))
-            .map(this::buildResponse);
+    @Override public Flux<CarResponse> getByUserId(String accountId) {
+        return permissionService.getByUserId(accountId).flux()
+            .zipWith(carRepository.findByAccountId(accountId))
+            .filter(tuple -> tuple.getT1().contains(tuple.getT2().getId()))
+            .map(Tuple2::getT2)
+            .map(carToCarResponseConverter::convert);
     }
 
-    @Override public Mono<Void> delete(UUID id) {
+    @Override public Mono<Void> delete(String id) {
         return carRepository.deleteById(id);
     }
 
-    private CarResponse buildResponse(Car car) {
-        return CarResponse
-            .builder()
-            .id(car.getId())
-            .registrationPlate(car.getRegistrationPlate())
-            .brand(car.getBrand())
-            .model(car.getModel())
-            .color(car.getColor())
-            .build();
+    private Mono<Car> createPermissionAndReturnCar(Car car) {
+        return permissionService.create(car.getId(), car.getType())
+            .zipWith(Mono.just(car))
+            .map(Tuple2::getT2);
     }
 }

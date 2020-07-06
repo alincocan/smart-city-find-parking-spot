@@ -5,7 +5,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.UUID;
 
@@ -15,12 +17,14 @@ import java.util.UUID;
 @EqualsAndHashCode
 @ToString
 @Builder
-public class Account {
+public class User {
 
-    private UUID id;
+    @Id
+    private String id;
     private String firstName;
     private String lastName;
     private String email;
     private String phoneNo;
+    private String password;
 
 }

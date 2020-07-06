@@ -12,7 +12,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.UUID;
+import java.security.Principal;
+
+import static com.smartcity.parking.router.handler.extractor.AuthorizationHeaderExtractor.extractUserId;
 
 @Component
 public class CarHandler {
@@ -25,10 +27,11 @@ public class CarHandler {
 
     public Mono<ServerResponse> create(ServerRequest serverRequest) {
         return serverRequest.bodyToMono(CarRequest.class)
-            .flatMap(carService::create)
+            .zipWith(serverRequest.principal().map(Principal::getName))
+            .flatMap(tuple -> carService.create(tuple.getT1(), tuple.getT2()))
             .flatMap(response ->
                 ServerResponse
-                    .created(URI.create("/car" + response.getId()))
+                    .created(URI.create("/car/" + response.getId()))
                     .body(Mono.just(response), CarResponse.class)
             )
             .onErrorResume(
@@ -38,8 +41,9 @@ public class CarHandler {
     }
 
     public Mono<ServerResponse> getById(ServerRequest serverRequest) {
-        return carService
-            .getById(UUID.fromString(serverRequest.pathVariable("id")))
+        final Mono<String> userId = extractUserId(serverRequest);
+
+        return carService.getById(serverRequest.pathVariable("id"))
             .flatMap(response -> ServerResponse.ok().body(Mono.just(response), CarResponse.class))
             .onErrorResume(
                 NotFoundException.class,
@@ -51,9 +55,9 @@ public class CarHandler {
             );
     }
 
-    public Mono<ServerResponse> getByAccount(ServerRequest serverRequest) {
-        Flux<CarResponse> cars = carService
-            .getByAccountId(UUID.fromString(serverRequest.pathVariable("accountId")));
+    public Mono<ServerResponse> getByUser(ServerRequest serverRequest) {
+        final Flux<CarResponse> cars = extractUserId(serverRequest)
+            .flatMapMany(carService::getByUserId);
 
         return ServerResponse
             .ok()
@@ -69,7 +73,7 @@ public class CarHandler {
     }
 
     public Mono<ServerResponse> delete(ServerRequest serverRequest) {
-        return carService.delete(UUID.fromString(serverRequest.pathVariable("id")))
+        return carService.delete(serverRequest.pathVariable("id"))
             .flatMap(response -> ServerResponse.ok().build());
     }
 

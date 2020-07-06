@@ -1,14 +1,22 @@
 version: "3"
 services:
-  reactive-mongodb:
+  mongodb:
     image: mongo:latest
-    container_name: "reactive-mongodb"
+    container_name: "mongodb"
     ports:
       - 27017:27017
-    command: --smallfiles
-  app:
-    image: smart-city
+#    command: --smallfiles
+  permissions:
+    image: permissions:1.0
+    container_name: "permissions"
     ports:
-      - 8080:8080
+      - 8082:8082
     links:
-      - reactive-mongodb
+      - mongodb
+  smart-city:
+    image: smart-city:1.0
+    container_name: "smart-city"
+    ports:
+      - 8081:8081
+    links:
+      - mongodb

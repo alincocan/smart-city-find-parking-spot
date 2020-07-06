@@ -13,4 +13,8 @@ public class BusinessWebException extends RuntimeException {
         this.httpStatus = httpStatus;
     }
 
+    public BusinessWebException(HttpStatus httpStatus) {
+        this.httpStatus = httpStatus;
+    }
+
 }

@@ -5,9 +5,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.UUID;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document
 @Getter
@@ -15,11 +15,17 @@ import java.util.UUID;
 @EqualsAndHashCode
 @ToString
 @Builder
-public class Car {
+public class Car implements Entity {
 
-    private UUID id;
+    @Id
+    private String id;
     private String registrationPlate;
     private String brand;
     private String model;
     private String color;
+    private String accountId;
+
+    public EntityType getType() {
+        return EntityType.CAR;
+    }
 }

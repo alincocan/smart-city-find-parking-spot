@@ -4,9 +4,7 @@ import com.smartcity.parking.domain.Car;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Flux;
 
-import java.util.UUID;
+public interface CarRepository extends ReactiveMongoRepository<Car, String> {
 
-public interface CarRepository extends ReactiveMongoRepository<Car, UUID> {
-
-    Flux<Car> findByAccountId(UUID accountId);
+    Flux<Car> findByAccountId(String accountId);
 }

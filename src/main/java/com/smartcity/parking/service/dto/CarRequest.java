@@ -1,10 +1,12 @@
 package com.smartcity.parking.service.dto;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.UUID;
 
 @Data
+@Builder
 public class CarRequest {
 
     private UUID id;
@@ -12,6 +14,5 @@ public class CarRequest {
     private String brand;
     private String model;
     private String color;
-    private String accountId;
 
 }
